@@ -21,7 +21,21 @@ This project is a clone of the popular Telegram mini app, Notcoin.
     npm run dev
     ```
 
-5. **Open Your Browser**:
+5. **Run backend**:
+
+    ```bash
+    cd backend
+    ```
+
+    ```bash
+    npm install
+    ```
+
+    ```bash
+    node server.js
+    ```
+
+6. **Open Your Browser**:
 
     Navigate to localhost to see the final version of the application.
 
