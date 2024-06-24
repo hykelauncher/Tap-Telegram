@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import axios from 'axios';
 import './index.css';
 import Arrow from './icons/Arrow';
@@ -12,62 +12,74 @@ interface Click {
 }
 
 const App: React.FC = () => {
-  const { userId } = useParams<{ userId: string }>();
+  const location = useLocation();
+  const [userId, setUserId] = useState<string>('');
+
   const [points, setPoints] = useState<number>(0);
   const [energy, setEnergy] = useState<number>(2532);
   const [clicks, setClicks] = useState<Click[]>([]);
+
   const pointsToAdd = 12;
   const energyToReduce = 12;
 
-  // Fetch points when userId changes
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const userIdParam = searchParams.get('userId');
+    if (userIdParam) {
+      setUserId(userIdParam);
+    }
+  }, [location.search]);
+
   useEffect(() => {
     const fetchPoints = async () => {
       try {
-        const response = await axios.get(`http://localhost:5000/api/points?userId=${userId}`);
-        setPoints(response.data.points);
+        if (userId) {
+          const response = await axios.get<{ points: number }>(`http://localhost:5000/api/points?userId=${userId}`);
+          setPoints(response.data.points);
+        }
       } catch (error) {
         console.error('Error fetching points:', error);
       }
     };
 
     fetchPoints();
-  }, [userId]); // Ensure useEffect runs when userId changes
+  }, [userId]);
 
-  // Save points whenever points change
   useEffect(() => {
     const savePoints = async () => {
       try {
-        await axios.post('http://localhost:5000/api/points', { userId, points });
+        if (userId && points > 0) {
+          await axios.post('http://localhost:5000/api/points', { userId, points });
+        }
       } catch (error) {
         console.error('Error saving points:', error);
       }
     };
 
-    if (points > 0) {
-      savePoints();
-    }
-  }, [points, userId]); // Ensure useEffect runs when points or userId changes
+    savePoints();
+  }, [points, userId]);
 
   const handleClick = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
     if (energy - energyToReduce < 0) {
       return;
     }
+
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    setPoints(points + pointsToAdd);
-    setEnergy(energy - energyToReduce < 0 ? 0 : energy - energyToReduce);
-    setClicks([...clicks, { id: Date.now(), x, y }]);
+    setPoints(prevPoints => prevPoints + pointsToAdd);
+    setEnergy(prevEnergy => Math.max(prevEnergy - energyToReduce, 0));
+    setClicks(prevClicks => [...prevClicks, { id: Date.now(), x, y }]);
   };
 
   const handleAnimationEnd = (id: number) => {
-    setClicks((prevClicks) => prevClicks.filter(click => click.id !== id));
+    setClicks(prevClicks => prevClicks.filter(click => click.id !== id));
   };
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setEnergy((prevEnergy) => Math.min(prevEnergy + 1, 6500));
+      setEnergy(prevEnergy => Math.min(prevEnergy + 1, 6500));
     }, 100);
 
     return () => clearInterval(interval);
@@ -135,7 +147,7 @@ const App: React.FC = () => {
         <div className="flex-grow flex items-center justify-center">
           <div className="relative mt-4" onClick={handleClick}>
             <img src={notcoin} width={256} height={256} alt="notcoin" />
-            {clicks.map((click) => (
+            {clicks.map(click => (
               <div
                 key={click.id}
                 className="absolute text-5xl font-bold opacity-0"
@@ -146,7 +158,7 @@ const App: React.FC = () => {
                 }}
                 onAnimationEnd={() => handleAnimationEnd(click.id)}
               >
-                12
+                {pointsToAdd}
               </div>
             ))}
           </div>
