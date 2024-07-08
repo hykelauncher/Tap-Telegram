@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $userId = getParam('userId');
     if ($userId) {
-        $stmt = $conn->prepare('SELECT points FROM users_points WHERE userId = ?');
+        $stmt = $conn->prepare('SELECT points, multiplicadorPontos, energy, max_energy, cooldown FROM users_points WHERE userId = ?');
         $stmt->bind_param('s', $userId);
         $stmt->execute();
         $result = $stmt->get_result();
@@ -54,10 +54,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $stmtInsert->bind_param('s', $userId);
             $stmtInsert->execute();
             $stmtInsert->close();
-            echo json_encode(['points' => 0]);
+            echo json_encode(['points' => 0, 'points_factor' => 12, 'energy' => 2532,  'max_energy' => 6500, 'cooldown' => 10]);
         } else {
             $row = $result->fetch_assoc();
-            echo json_encode(['points' => $row['points']]);
+            echo json_encode(['points' => $row['points'], 'points_factor' => $row['multiplicadorPontos'], 'energy' => $row['energy'], 'max_energy' => $row['max_energy'], 'cooldown' => $row['cooldown']]);
         }
         
         $stmt->close();

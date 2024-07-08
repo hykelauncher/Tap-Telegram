@@ -7,6 +7,8 @@ import { bear, coin, highVoltage, notcoin, rocket, trophy } from './images';
 
 import FrensModal from './Components/FrensModal';
 import EarnModal from './Components/EarnModal';
+import ChallengeModal from './Components/ChallengeModal';
+import BoosterModal from './Components/BoosterModal';
 
 interface Click {
   id: number;
@@ -24,9 +26,11 @@ const App: React.FC = () => {
   const location = useLocation();
   const [userId, setUserId] = useState<string>('');
   const [inviteCode, setInviteCode] = useState<string>('');
+  const [maxEnergy, setMaxEnergy] = useState<number>(0);
 
   const [points, setPoints] = useState<number>(0);
-  const [energy, setEnergy] = useState<number>(2532);
+  const [energy, setEnergy] = useState<number>(0);
+  const [energyLoaded, setEnergyLoaded] = useState<boolean>(false);
   const [clicks, setClicks] = useState<Click[]>([]);
   const [showModal, setShowModal] = useState<boolean>(false);
   const [showEarnModal, setShowEarnModal] = useState<boolean>(false);
@@ -34,8 +38,10 @@ const App: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [bonusData, setBonusData] = useState<BonusData | null>(null);
   const [showModalBonus, setShowModalBonus] = useState(false);
-
-  const pointsToAdd = 12;
+  const [showModalChallenge, setShowModalChallenge] = useState(false);
+  const [showModalBooster, setShowModalBooster] = useState(false);
+  const [pointsToAdd, setPointsToAdd] = useState<number>(0);
+  const [cooldown, setCooldown] = useState<number>(0);
   const energyToReduce = 12;
 
   useEffect(() => {
@@ -44,6 +50,7 @@ const App: React.FC = () => {
     const inviteCodeParam = searchParams.get('invite');
     if (userIdParam) {
       setUserId(userIdParam);
+      console.log(`userId set to: ${userIdParam}`);
     }
     if (inviteCodeParam) {
       setInviteCode(inviteCodeParam);
@@ -56,7 +63,26 @@ const App: React.FC = () => {
   };
 
   const closeModal = () => {
+    fetchPoints();
     setShowModal(false);
+  };
+
+  const openModalBooster = () => {
+    setShowModalBooster(true);
+  };
+
+  const closeModalBooster = () => {
+    fetchPoints();
+    setShowModalBooster(false);
+  };
+
+  const openModalChallenge = () => {
+    setShowModalChallenge(true);
+  };
+
+  const closeModalChallenge = () => {
+    fetchPoints();
+    setShowModalChallenge(false);
   };
 
   const openEarnModal = () => {
@@ -71,8 +97,17 @@ const App: React.FC = () => {
   const fetchPoints = async () => {
     try {
       if (userId) {
-        const response = await axios.get<{ points: number }>(`https://tictacticcat.fun/backend/?userId=${userId}`);
+        console.log('Fetching points for userId:', userId);
+        const response = await axios.get<{ points: number, points_factor: number, energy: number, max_energy: number, cooldown: number }>(`https://tictacticcat.fun/backend/index.php?userId=${userId}`);
+        
         setPoints(response.data.points);
+        setPointsToAdd(response.data.points_factor);
+        setEnergy(response.data.energy);
+        setEnergyLoaded(true);
+        setMaxEnergy(response.data.max_energy);
+        setCooldown(response.data.cooldown);
+      } else {
+        console.log('userId not defined for fetchPoints');
       }
     } catch (error) {
       console.error('Error fetching points:', error);
@@ -95,6 +130,8 @@ const App: React.FC = () => {
           setErrorMessage(response.data.error);
           setErrorModalVisible(true);
         }
+      } else {
+        console.log('userId or inviteCode not defined for fetchReference');
       }
     } catch (error) {
       console.error('Error referencing invite code:', error);
@@ -103,14 +140,20 @@ const App: React.FC = () => {
 
   const fetchBonus = async () => {
     try {
-      const response = await axios.get<BonusData>(`https://tictacticcat.fun/backend/service_add_points_bonus.php?userId=${userId}`);
-
-      if ('userId' in response.data && 'pointsGained' in response.data && 'elapsedTime' in response.data) {
-        setBonusData(response.data as BonusData);
-        setShowModalBonus(true);
-        console.log("MODAL BONUS : " + showModalBonus);
+      if (userId) {
+        console.log('Fetching bonus data for userId:', userId);
+        const response = await axios.get<BonusData>(`https://tictacticcat.fun/backend/service_add_points_bonus.php?userId=${userId}`);
+        console.log(`DATA: ${JSON.stringify(response.data)}`);
+  
+        if ('userId' in response.data && 'pointsGained' in response.data && 'elapsedTime' in response.data) {
+          setBonusData(response.data as BonusData);
+          setShowModalBonus(true);
+          console.log("MODAL BONUS : " + showModalBonus);
+        } else {
+          console.log(response.data);
+        }
       } else {
-        console.log(response.data);
+        console.log('userId not defined for fetchBonus');
       }
     } catch (error) {
       console.error('Error fetching bonus data:', error);
@@ -118,6 +161,7 @@ const App: React.FC = () => {
   };
 
   const closeModalBonus = () => {
+    fetchPoints();
     setShowModalBonus(false);
   };
 
@@ -126,16 +170,22 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchBonus();
-    fetchPoints();
-    fetchReference();
+    setTimeout(() => {
+      if (userId) {
+        fetchPoints();
+        fetchBonus();
+        fetchReference();
+      } else {
+        console.log('userId not defined for useEffect');
+      }
+    }, 2000);
   }, [userId, inviteCode]);
 
   useEffect(() => {
     const savePoints = async () => {
       try {
         if (userId && points > 0) {
-          await axios.post('https://tictacticcat.fun/backend/', { userId, points });
+          await axios.post('https://tictacticcat.fun/backend/index.php', { userId, points });
         }
       } catch (error) {
         console.error('Error saving points:', error);
@@ -164,12 +214,30 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setEnergy(prevEnergy => Math.min(prevEnergy + 1, 6500));
-    }, 100);
+    if (energyLoaded && cooldown > 0) {
+      const interval = setInterval(() => {
+        setEnergy(prevEnergy => Math.min(prevEnergy + 1, maxEnergy));
+      }, (cooldown * 1000));
 
-    return () => clearInterval(interval);
-  }, []);
+      return () => clearInterval(interval);
+    }
+  }, [energyLoaded, maxEnergy, cooldown]);
+
+  useEffect(() => {
+    const saveEnergy = async () => {
+      try {
+        if (userId && energy > 0) {
+          await axios.post('https://tictacticcat.fun/backend/save_energy.php', { userId, energy });
+        }
+      } catch (error) {
+        console.error('Error saving energy:', error);
+      }
+    };
+
+    if (energyLoaded) {
+      saveEnergy();
+    }
+  }, [energy, userId, energyLoaded]);
 
   return (
     <div className="bg-gradient-main min-h-screen px-4 flex flex-col items-center text-white font-medium">
@@ -202,7 +270,7 @@ const App: React.FC = () => {
                 <img src={highVoltage} width={44} height={44} alt="High Voltage" />
                 <div className="ml-2 text-left">
                   <span className="text-white text-2xl font-bold block">{energy}</span>
-                  <span className="text-white text-large opacity-75">/ 6500</span>
+                  <span className="text-white text-large opacity-75">/ {maxEnergy}</span>
                 </div>
               </div>
             </div>
@@ -218,15 +286,19 @@ const App: React.FC = () => {
                   <span>Earn</span>
                 </button>
                 <div className="h-[48px] w-[2px] bg-[#fddb6d]"></div>
-                <button className="flex flex-col items-center gap-1" >
+                <button className="flex flex-col items-center gap-1"  onClick={openModalBooster}>
                   <img src={rocket} width={24} height={24} alt="rocket" />
                   <span>Boosts</span>
+                </button>
+                <button className="flex flex-col items-center gap-1" onClick={openModalChallenge} >
+                  <img src={rocket} width={24} height={24} alt="rocket" />
+                  <span>Challenges</span>
                 </button>
               </div>
             </div>
           </div>
           <div className="w-full bg-[#f9c035] rounded-full mt-4">
-            <div className="bg-gradient-to-r from-[#f3c45a] to-[#fffad0] h-4 rounded-full" style={{ width: `${(energy / 6500) * 100}%` }}></div>
+            <div className="bg-gradient-to-r from-[#f3c45a] to-[#fffad0] h-4 rounded-full" style={{ width: `${(energy / maxEnergy) * 100}%` }}></div>
           </div>
         </div>
 
@@ -251,15 +323,19 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      { showModal && <FrensModal userId={userId} onClose={closeModal} />}
+      {showModal && <FrensModal userId={userId} onClose={closeModal} />}
 
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="bg-black bg-opacity-70 text-white px-6 py-4 rounded-lg max-w-md">
-            <EarnModal userId={userId} points={points} onClose={closeEarnModal} />
+            <EarnModal userId={userId} points={5000} onClose={closeEarnModal} />
           </div>
         </div>
       )}
+
+  {showModalBooster && <BoosterModal userId={userId} onClose={closeModalBooster} />}  
+
+      {showModalChallenge && <ChallengeModal userId={userId} onClose={closeModalChallenge} />}
 
       {errorModalVisible && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
