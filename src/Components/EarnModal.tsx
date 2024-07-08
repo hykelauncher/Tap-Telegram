@@ -7,6 +7,7 @@ import axios from 'axios';
 
 interface EarnModalProps {
   userId: string;
+  points: number;
   onClose: () => void;
 }
 
@@ -20,11 +21,12 @@ interface CardProps {
     description: string;
     status: string;
     id: number;
-    userId: string; // Incluindo userId como propriedade do Card
+    userId: string; 
+    points: number;
     onBonusActivated: () => void; // Callback para recarregar os bônus após ativação bem-sucedida
   }
   
-  const Card: React.FC<CardProps> = ({ image, name, cost, description, status, id, userId, gainpersecond,  onBonusActivated }) => {
+  const Card: React.FC<CardProps> = ({ image, name, cost, description, status, id, userId, gainpersecond,  onBonusActivated , points }) => {
     const [showSuccessModal, setShowSuccessModal] = useState(false);
     const [showErrorModal, setShowErrorModal] = useState(false);
   
@@ -56,7 +58,7 @@ interface CardProps {
         <p className="text-sm text-gray-600">Gain/Secord: {gainpersecond}</p>
         <p className="text-sm text-gray-600">{description}</p>
   
-        {status === 'disponivel' && (
+        {status === 'disponivel' && points >= cost && (
           <button
             className="bg-blue-500 w-full hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2"
             onClick={() => handleActivateBonus(id)}
@@ -98,7 +100,7 @@ interface CardProps {
   };
   
 
-  const EarnModal: React.FC<EarnModalProps> = ({ userId, onClose }) => {
+  const EarnModal: React.FC<EarnModalProps> = ({ userId, onClose, points }) => {
     const [currentPage, setCurrentPage] = useState(0);
     const [cardsData, setCardsData] = useState<CardProps[]>([]);
   
@@ -160,6 +162,7 @@ interface CardProps {
             {currentItems.map((card, index) => (
               <Card
                 key={index}
+                points={points}
                 image={card.image}
                 name={card.name}
                 cost={card.cost}

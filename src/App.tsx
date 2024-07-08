@@ -213,12 +213,12 @@ const App: React.FC = () => {
                   <span>Frens</span>
                 </button>
                 <div className="h-[48px] w-[2px] bg-[#fddb6d]"></div>
-                <button className="flex flex-col items-center gap-1">
+                <button className="flex flex-col items-center gap-1" onClick={openEarnModal}>
                   <img src={coin} width={24} height={24} alt="coin" />
                   <span>Earn</span>
                 </button>
                 <div className="h-[48px] w-[2px] bg-[#fddb6d]"></div>
-                <button className="flex flex-col items-center gap-1" onClick={openEarnModal}>
+                <button className="flex flex-col items-center gap-1" >
                   <img src={rocket} width={24} height={24} alt="rocket" />
                   <span>Boosts</span>
                 </button>
@@ -256,7 +256,7 @@ const App: React.FC = () => {
       {showEarnModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="bg-black bg-opacity-70 text-white px-6 py-4 rounded-lg max-w-md">
-            <EarnModal userId={userId} onClose={closeEarnModal} />
+            <EarnModal userId={userId} points={points} onClose={closeEarnModal} />
           </div>
         </div>
       )}
