@@ -11,7 +11,7 @@ interface EarnModalProps {
   onClose: () => void;
 }
 
-const itemsPerPage = 3;
+const itemsPerPage = 2;
 
 interface CardProps {
     image: string;
