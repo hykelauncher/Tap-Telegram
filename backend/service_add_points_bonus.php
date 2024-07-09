@@ -51,9 +51,9 @@ $userId = $_GET['userId'];
 
 
 $host = '198.12.240.20';
-$user = 'tap';
-$password = 'ocarinhadapolo';
-$database = 'taptelegram';
+$user = 'tapuser';
+$password = 'suasenhadev10';
+$database = 'tap-final';
 
 // Conexão com o MySQL
 $conn = new mysqli($host, $user, $password, $database);
@@ -124,8 +124,6 @@ if ($resultPoints->num_rows > 0) {
 }
 
 // Fechar conexões e statements
-$stmt->close();
-$stmtBonus->close();
-$stmtUpdate->close();
+
 $conn->close();
 ?>

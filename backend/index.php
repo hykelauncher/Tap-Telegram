@@ -3,9 +3,9 @@
 
 // Configurações do MySQL
 $host = '198.12.240.20';
-$user = 'tap';
-$password = 'ocarinhadapolo';
-$database = 'taptelegram';
+$user = 'tapuser';
+$password = 'suasenhadev10';
+$database = 'tap-final';
 
 // Conexão com o MySQL
 $conn = new mysqli($host, $user, $password, $database);
@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $result = $stmt->get_result();
         
         if ($result->num_rows === 0) {
-            $stmtInsert = $conn->prepare('INSERT INTO users_points (userId, points) VALUES (?, 0)');
+            $stmtInsert = $conn->prepare('INSERT INTO users_points (userId, points, last_updated_datetime) VALUES (?, 0, NOW())');
             $stmtInsert->bind_param('s', $userId);
             $stmtInsert->execute();
             $stmtInsert->close();
@@ -75,8 +75,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $points = $data['points'];
     
     if ($userId && $points !== null) {
-        $stmt = $conn->prepare('INSERT INTO users_points (userId, points) VALUES (?, ?) ON DUPLICATE KEY UPDATE points = ?');
-        $stmt->bind_param('sii', $userId, $points, $points);
+        $stmt = $conn->prepare('UPDATE users_points SET points = ? WHERE userId = ?');
+        $stmt->bind_param('is',  $points, $userId);
         $stmt->execute();
         $stmt->close();
         

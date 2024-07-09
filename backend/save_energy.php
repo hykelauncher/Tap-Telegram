@@ -2,10 +2,10 @@
 
 
 // Configurações do MySQL
-$host = '198.12.240.20';
-$user = 'tap';
-$password = 'ocarinhadapolo';
-$database = 'taptelegram';
+    $host = '198.12.240.20';
+    $user = 'tapuser';
+    $password = 'suasenhadev10';
+    $database = 'tap-final';
 
 // Conexão com o MySQL
 $conn = new mysqli($host, $user, $password, $database);

@@ -146,10 +146,12 @@ const App: React.FC = () => {
         console.log(`DATA: ${JSON.stringify(response.data)}`);
   
         if ('userId' in response.data && 'pointsGained' in response.data && 'elapsedTime' in response.data) {
+          fetchPoints();
           setBonusData(response.data as BonusData);
           setShowModalBonus(true);
           console.log("MODAL BONUS : " + showModalBonus);
         } else {
+          console.log("Erro");
           console.log(response.data);
         }
       } else {
